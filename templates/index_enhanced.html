@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Verification System - Multi-Model</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .model-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background-color: #f8f9ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background-color: #f0f4ff;
+        }
+
+        .upload-area h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .upload-area p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.2s ease;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .compare-section {
+            text-align: center;
+        }
+
+        .compare-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+
+        .compare-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+        }
+
+        .compare-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .result-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            display: none;
+        }
+
+        .result-section.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .model-result {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+
+        .model-result.insightface {
+            border-left-color: #28a745;
+        }
+
+        .model-result.trained_model {
+            border-left-color: #007bff;
+        }
+
+        .model-result.basic {
+            border-left-color: #ffc107;
+        }
+
+        .model-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .model-score {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .model-result-text {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .result-same {
+            color: #28a745;
+        }
+
+        .result-different {
+            color: #dc3545;
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .confidence-very-high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .confidence-high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .confidence-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .confidence-low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .system-info {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .system-info h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .system-info p {
+            color: #424242;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .upload-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Face Verification System</h1>
+            <p>Multi-model face verification with InsightFace, trained model, and basic matcher</p>
+            <div class="model-badge">Multiple Models Active</div>
+        </div>
+
+        <div class="main-content">
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea1">
+                    <h3>📸 First Image</h3>
+                    <p>Drag & drop or click to upload</p>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput1').click()">
+                        Choose Image
+                    </button>
+                    <input type="file" id="fileInput1" accept="image/*" style="display: none;" onchange="handleFileSelect(event, 1)">
+                    <img id="preview1" class="image-preview" alt="Preview">
+                </div>
+
+                <div class="upload-area" id="uploadArea2">
+                    <h3>📸 Second Image</h3>
+                    <p>Drag & drop or click to upload</p>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput2').click()">
+                        Choose Image
+                    </button>
+                    <input type="file" id="fileInput2" accept="image/*" style="display: none;" onchange="handleFileSelect(event, 2)">
+                    <img id="preview2" class="image-preview" alt="Preview">
+                </div>
+            </div>
+
+            <div class="compare-section">
+                <button class="compare-btn" id="compareBtn" onclick="compareFaces()" disabled>
+                    🔍 Compare Faces
+                </button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing faces with multiple models...</p>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+
+            <div class="result-section" id="resultSection">
+                <div class="result-header">Verification Result</div>
+                <div class="model-result insightface" id="insightfaceResult" style="display:none;">
+                    <div class="model-name">InsightFace</div>
+                    <div class="model-score" id="modelScore">0.0%</div>
+                    <div class="model-result-text" id="modelResultText">-</div>
+                    <div class="confidence-badge" id="confidenceBadge">-</div>
+                </div>
+                <!-- <div class="system-info" id="systemInfo">
+                    <h4>🔍 InsightFace Face Verification</h4>
+                    <p>This system uses only the InsightFace model for face verification.</p>
+                </div> -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let image1Data = null;
+        let image2Data = null;
+
+        // Check system status on page load
+        window.onload = function() {
+            checkSystemStatus();
+        };
+
+        function checkSystemStatus() {
+            fetch('/health')
+                .then(response => response.json())
+                .then(data => {
+                    const systemInfo = document.getElementById('systemInfo');
+                    systemInfo.innerHTML = `
+                        <h4>🤖 Multi-Model Face Verification System</h4>
+                        <p>Available models: ${data.available_models.join(', ')} (${data.model_count} total)</p>
+                    `;
+                })
+                .catch(error => {
+                    console.log('Could not fetch system status');
+                });
+        }
+
+        // Drag and drop functionality
+        function setupDragAndDrop() {
+            const uploadAreas = document.querySelectorAll('.upload-area');
+            
+            uploadAreas.forEach((area, index) => {
+                area.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    area.classList.add('dragover');
+                });
+
+                area.addEventListener('dragleave', () => {
+                    area.classList.remove('dragover');
+                });
+
+                area.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    area.classList.remove('dragover');
+                    
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        handleFile(files[0], index + 1);
+                    }
+                });
+            });
+        }
+
+        function handleFileSelect(event, imageNumber) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file, imageNumber);
+            }
+        }
+
+        function handleFile(file, imageNumber) {
+            if (!file.type.startsWith('image/')) {
+                showError('Please select an image file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageData = e.target.result;
+                
+                if (imageNumber === 1) {
+                    image1Data = imageData;
+                    document.getElementById('preview1').src = imageData;
+                    document.getElementById('preview1').style.display = 'block';
+                } else {
+                    image2Data = imageData;
+                    document.getElementById('preview2').src = imageData;
+                    document.getElementById('preview2').style.display = 'block';
+                }
+
+                updateCompareButton();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateCompareButton() {
+            const compareBtn = document.getElementById('compareBtn');
+            compareBtn.disabled = !(image1Data && image2Data);
+        }
+
+        async function compareFaces() {
+            if (!image1Data || !image2Data) {
+                showError('Please upload both images first');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultSection').classList.remove('show');
+            hideError();
+
+            try {
+                const response = await fetch('/compare', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        image1: image1Data,
+                        image2: image2Data
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    displayResults(result);
+                } else {
+                    showError(result.error || 'An error occurred during comparison');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function displayResults(result) {
+            const insightfaceResult = document.getElementById('insightfaceResult');
+            const modelScore = document.getElementById('modelScore');
+            const modelResultText = document.getElementById('modelResultText');
+            const confidenceBadge = document.getElementById('confidenceBadge');
+            // Show the result card
+            insightfaceResult.style.display = 'block';
+            // Update values
+            modelScore.textContent = (result.similarity_score * 100).toFixed(1) + '%';
+            modelResultText.textContent = result.result;
+            modelResultText.className = 'model-result-text ' + (result.result === 'Same Person' ? 'result-same' : 'result-different');
+            confidenceBadge.textContent = result.confidence;
+            confidenceBadge.className = 'confidence-badge confidence-' + (result.confidence ? result.confidence.toLowerCase().replace(/\s+/g, '-') : '');
+            // Show result section
+            document.getElementById('resultSection').classList.add('show');
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        // Initialize drag and drop
+        setupDragAndDrop();
+    </script>
+</body>
+</html> 
